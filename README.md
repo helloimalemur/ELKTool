@@ -99,37 +99,9 @@ Matches prefix for policy and index name for matching on indexes, delimited by '
 ```delete_``` and ```close_``` are available. \
 ```policy_index="days"```
 ```toml
-# JDBC
-close_jdbc="45"
-delete_jdbc="90"
-
 # HAPROXY
 close_haproxy="45"
 delete_haproxy="90"
-
-# Mod security
-close_modsec="7"
-delete_modsec="7"
-
-# Task Daemon log
-close_daemonlog="7"
-delete_daemonlog="30"
-
-# Task Thread log
-close_threadlog="7"
-delete_threadlog="30"
-
-# Metric beats
-close_metricbeat="7"
-delete_metricbeat="30"
-
-# Snort Warnings
-close_snort="7"
-delete_snort="90"
-
-# Database Thread Count
-close_threadcount="7"
-delete_threadcount="30"
 ```
 
 
