@@ -1,0 +1,11 @@
+[Unit]
+Description=Elasticsearch api tool
+
+[Service]
+Type=simple
+User=root
+Group=root
+ExecStart=/var/lib/elktool/run.sh
+
+[Install]
+WantedBy=multi-user.target
