@@ -15,9 +15,7 @@ bash -e install.sh
     The Tool closes and deletes indices matching policies in the ```Policy.toml``` file.
 
 ### Create backups
-    Configure the options in the ```Settings.toml``` file.
-    Tool will create an elastic "snapshot", archive the snapshot into a tarball.
-    Then scp or locally copy it to the specified destination.
+    Tool will create a daily elastic "snapshot" to the configured default snapshot repository.
 
 ### Alert index
     Create Rules in Kibana to create an index named "alert-index"
