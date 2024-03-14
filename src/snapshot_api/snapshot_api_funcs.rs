@@ -378,24 +378,23 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
                 .await;
             }
         }
+    } else {
+        // create snapshot for the last threshold period
+        if settings_map
+            .get("snapshot_backup_enabled")
+            .unwrap()
+            .contains("true")
+        {
+            println!("Creating Snapshot 1");
+            create_snapshot(
+                elastic_url,
+                elastic_user,
+                elastic_pass,
+                settings_map.clone(),
+            )
+            .await;
+        }
     }
-    // else {
-    //     // create snapshot for the last threshold period
-    //     if settings_map
-    //         .get("snapshot_backup_enabled")
-    //         .unwrap()
-    //         .contains("true")
-    //     {
-    //         println!("Creating Snapshot 1");
-    //         create_snapshot(
-    //             elastic_url,
-    //             elastic_user,
-    //             elastic_pass,
-    //             settings_map.clone(),
-    //         )
-    //         .await;
-    //     }
-    // }
 }
 
 pub async fn stop_pending_snapshots(elastic_url: &str, elastic_user: &str, elastic_pass: &str) {
