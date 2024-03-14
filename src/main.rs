@@ -11,11 +11,11 @@ use crate::index_api::index_api_funcs::{
     close_indexes_over_age_threshold, cluster_disk_alloc_check, cluster_health_check,
     delete_indexes_over_age_threshold,
 };
-use crate::repository_api::repo_api_funcs::{
-    check_threshold_passed_create_snapshot, copy_backup_if_not_running_snapshot,
-};
+
 use crate::search_api::search_api_funcs::max_async_search_response_size;
-use crate::snapshot_api::snapshot_api_funcs::check_for_running_backup_check_space_cancel_backup_if_low;
+use crate::snapshot_api::snapshot_api_funcs::{
+    check_for_running_snapshot_check_space, check_threshold_and_create_snapshot,
+};
 
 mod alerts_api_funcs;
 mod ilm_api;
@@ -69,6 +69,8 @@ async fn main() {
         .expect("COULD NOT GET alerting_enabled")
         .as_str();
 
+    println!("Running.. ");
+
     let _startup_timestamp = Local::now();
 
     if run_lm_on_start.contains("true") {
@@ -108,15 +110,11 @@ async fn run_lm_and_backup_routine(
         Local::now().format("%d-%m-%y - %H:%M")
     );
 
-    // if we're not currently creating a snapshot or running a backup, and there is enough space on the drive.
-    if !check_for_running_backup_check_space_cancel_backup_if_low(
-        settings_map.clone(),
-        policies_map.clone(),
-    )
-    .await
-    {
+    // if we're not currently creating a snapshot, and there is enough space on the drive.
+    if !check_for_running_snapshot_check_space(settings_map.clone(), policies_map.clone()).await {
         println!("Stopping Elastic built in index lifetime management service");
-        stop_ilm_service(settings_map.clone(), policies_map.clone()).await; // stop built in ILM services
+        stop_ilm_service(settings_map.clone(), policies_map.clone()).await; // stop built-in ILM services
+        
         max_async_search_response_size(settings_map.clone(), policies_map.clone()).await; // resolve async search size kibana error
 
         println!("Closing indexes over threshold");
@@ -129,8 +127,7 @@ async fn run_lm_and_backup_routine(
         cluster_health_check(settings_map.clone()).await; // check Elastic API for status and report
 
         if cluster_disk_alloc_check(settings_map.clone()).await { // double check drive space
-            check_threshold_passed_create_snapshot(settings_map.clone(), policies_map.clone()).await; // check last_snapshot and compare with threshold
-            copy_backup_if_not_running_snapshot(settings_map.clone(), policies_map.clone()).await; // check last_backup and compare with threshold
+            check_threshold_and_create_snapshot(settings_map.clone(), policies_map.clone()).await; // check last_snapshot and compare with threshold
         }; // check remaining drive space and report status
     }
 }

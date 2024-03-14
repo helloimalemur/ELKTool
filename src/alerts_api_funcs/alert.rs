@@ -1,6 +1,7 @@
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fmt::Error;
-use serde::{Deserialize, Serialize};
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -60,15 +61,12 @@ pub struct Source {
     pub content: Option<String>,
 }
 
-
 pub async fn get_alert_indicies(
     elastic_url: &str,
     elastic_user: &str,
     elastic_pass: &str,
     settings_map: HashMap<String, String>,
 ) -> Result<HashMap<String, String>, Error> {
-    // curl -X GET "https://stats.konnektive.com:9200/alert-index/_search" -H $'Authorization: Basic ZWxhc3RpYzpPVkIzN3dzUD1EUXlDU3J4U1hGVA=='
-
     let mut results_hashmap: HashMap<String, String> = HashMap::new();
 
     let full_url = format!("{}{}", elastic_url, "/alert-index/_search");
@@ -102,7 +100,7 @@ pub async fn get_alert_indicies(
             for hit in res.hits.unwrap().hits.unwrap().iter() {
                 let mut title = String::new();
                 let mut content = String::new();
-                
+
                 if let Some(title_some) = hit.source.clone().unwrap().title {
                     title = title_some;
                 }
@@ -115,11 +113,25 @@ pub async fn get_alert_indicies(
                     println!("{}", hit.source.clone().unwrap().title.unwrap());
                     println!("{}", hit.source.clone().unwrap().content.unwrap());
                     results_hashmap.insert(
-                        hit.source.clone().unwrap().title.expect("alert-index rule connector format error").to_string(),
-                        hit.source.clone().unwrap().content.expect("alert-index rule connector format error").to_string(),
+                        hit.source
+                            .clone()
+                            .unwrap()
+                            .title
+                            .expect("alert-index rule connector format error")
+                            .to_string(),
+                        hit.source
+                            .clone()
+                            .unwrap()
+                            .content
+                            .expect("alert-index rule connector format error")
+                            .to_string(),
                     );
                 } else {
-                    crate::alerts_api_funcs::alert_api_funcs::send_alerts("unable to retrieve alert-index check rules".to_string(), settings_map.clone()).await;
+                    crate::alerts_api_funcs::alert_api_funcs::send_alerts(
+                        "unable to retrieve alert-index check rules".to_string(),
+                        settings_map.clone(),
+                    )
+                    .await;
                 }
             }
         }
@@ -128,41 +140,108 @@ pub async fn get_alert_indicies(
     Ok(results_hashmap)
 }
 
-pub async fn delete_alert_indicies(
+// pub async fn delete_alert_indicies(
+//     elastic_url: &str,
+//     elastic_user: &str,
+//     elastic_pass: &str,
+// ) -> HashMap<String, String> {
+//
+//     let results_hashmap: HashMap<String, String> = HashMap::new();
+//
+//     let full_url = format!("{}{}", elastic_url, "/alert-index");
+//
+//     let client = reqwest::Client::builder()
+//         .danger_accept_invalid_certs(true)
+//         .build()
+//         .unwrap()
+//         .delete(full_url)
+//         .basic_auth(elastic_user, Some(elastic_pass))
+//         .header("Cache-Control", "max-age=0")
+//         .header("Accept", "application/json")
+//         .header("Accept-Encoding", "gzip, deflate")
+//         .send()
+//         .await;
+//
+//     // get indicies
+//     if client.is_ok() {
+//         let res = client.unwrap().text().await.unwrap();
+//
+//         // deserialize from json to Vec of ElasticSearch Index obj
+//         let _res: ElasticAlert = match serde_json::from_str(res.clone().as_str()) {
+//             Ok(r) => r,
+//             Err(e) => panic!("{}\n{:?}", e, res),
+//         };
+//     }
+//
+//     // println!("{:?}", res);
+//
+//     results_hashmap
+// }
+
+pub async fn delete_alert_indicies_by_query(
     elastic_url: &str,
     elastic_user: &str,
     elastic_pass: &str,
-) -> HashMap<String, String> {
-    // curl -X DELETE "https://stats.konnektive.com:9200/alert-index" -H $'Authorization: Basic ZWxhc3RpYzpPVkIzN3dzUD1EUXlDU3J4U1hGVA=='
+    title: String,
+) -> bool {
+    let data: Value = json!({ "query": { "match": { "title": format!("{}", title) } } });
+    let json = serde_json::to_string(&data).unwrap();
 
-    let results_hashmap: HashMap<String, String> = HashMap::new();
+    let full_url = format!("{}{}", elastic_url, "/alert-index/_delete_by_query");
 
-    let full_url = format!("{}{}", elastic_url, "/alert-index");
-
-    let client = reqwest::Client::builder()
+    match reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
         .build()
         .unwrap()
-        .delete(full_url)
+        .post(full_url)
         .basic_auth(elastic_user, Some(elastic_pass))
         .header("Cache-Control", "max-age=0")
         .header("Accept", "application/json")
+        .header("Content-Type", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
+        .body(json)
         .send()
-        .await;
-
-    // get indicies
-    if client.is_ok() {
-        let res = client.unwrap().text().await.unwrap();
-
-        // deserialize from json to Vec of ElasticSearch Index obj
-        let _res: ElasticAlert = match serde_json::from_str(res.clone().as_str()) {
-            Ok(r) => r,
-            Err(e) => panic!("{}\n{:?}", e, res),
-        };
+        .await
+    {
+        Ok(_client) => true,
+        Err(..) => false,
     }
+}
 
-    // println!("{:?}", res);
+#[cfg(test)]
+mod tests {
+    use crate::alerts_api_funcs::alert::delete_alert_indicies_by_query;
+    use config::Config;
+    use std::collections::HashMap;
 
-    results_hashmap
+    #[test]
+    fn test_del_alert_by() {
+        let settings = Config::builder()
+            .add_source(config::File::with_name("config/Settings"))
+            .build()
+            .unwrap();
+        let settings_map = settings
+            .try_deserialize::<HashMap<String, String>>()
+            .unwrap();
+        let elastic_url = settings_map
+            .get("elastic_url")
+            .expect("COULD NOT GET elastic_url")
+            .as_str();
+        let elastic_user = settings_map
+            .get("elastic_user")
+            .expect("COULD NOT GET elastic_user")
+            .as_str();
+        let elastic_pass = settings_map
+            .get("elastic_pass")
+            .expect("COULD NOT GET elastic_pass")
+            .as_str();
+
+        let rt = tokio::runtime::Runtime::new();
+        rt.unwrap().block_on(delete_alert_indicies_by_query(
+            elastic_url,
+            elastic_user,
+            elastic_pass,
+            "atest".to_string(),
+        ));
+    }
 }

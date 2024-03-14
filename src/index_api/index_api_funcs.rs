@@ -38,11 +38,14 @@ pub async fn close_indexes_over_age_threshold(
             // sub string and parse date
             if d_string.len() > 9 {
                 let date_string = d_string.substring(length - 10, length);
-                let naive_date = NaiveDate::parse_from_str(date_string, "%Y.%m.%d").unwrap_or_else(|_| NaiveDate::parse_from_str(
-                    Local::now().format("%Y.%m.%d").to_string().as_str(),
-                    "%Y.%m.%d",
-                )
-                    .unwrap());
+                let naive_date =
+                    NaiveDate::parse_from_str(date_string, "%Y.%m.%d").unwrap_or_else(|_| {
+                        NaiveDate::parse_from_str(
+                            Local::now().format("%Y.%m.%d").to_string().as_str(),
+                            "%Y.%m.%d",
+                        )
+                        .unwrap()
+                    });
                 let days_since = NaiveDate::parse_from_str(
                     Local::now().format("%Y.%m.%d").to_string().as_str(),
                     "%Y.%m.%d",
@@ -239,7 +242,6 @@ pub async fn get_open_index_data(
     elastic_user: &str,
     elastic_pass: &str,
 ) -> Vec<ElasticIndex> {
-    // curl -i -s -k -X $'GET' -H $'Host: stats.konnektive.com:9200' -H $'Cache-Control: max-age=0' -H $'Authorization: Basic ZWxhc3RpYzpLVUxnZEVEcmE9dlBRMUhlRW8reA==' -H $'Accept: text/html' -H $'Accept-Encoding: gzip, deflate' $'https://stats.konnektive.com:9200/_cat/indices?v'
     let full_url = format!("{}{}", elastic_url, "/_cat/indices?v");
     // let full_url = format!("{}{}", elastic_url, "?h=health,status,index,id,pri,rep,docs.count,docs.deleted,store.size,creation.date.string");
 
@@ -288,7 +290,7 @@ pub async fn cluster_health_check(settings_map: HashMap<String, String>) -> Stri
         .get("elastic_pass")
         .expect("COULD NOT GET elastic_pass")
         .as_str();
-    let discord_webhook_url = settings_map
+    let _discord_webhook_url = settings_map
         .get("discord_webhook_url")
         .expect("COULD NOT GET discord_webhook_url")
         .as_str();
@@ -375,12 +377,10 @@ pub async fn cluster_disk_alloc_check(settings_map: HashMap<String, String>) -> 
         .get("elastic_pass")
         .expect("COULD NOT GET elastic_pass")
         .as_str();
-    let discord_webhook_url = settings_map
+    let _discord_webhook_url = settings_map
         .get("discord_webhook_url")
         .expect("COULD NOT GET discord_webhook_url")
         .as_str();
-
-    // curl -i -s -k -X $'GET' -H $'Host: stats.konnektive.com:9200' -H $'Cache-Control: max-age=0' -H $'Authorization: Basic ZWxhc3RpYzpPVkIzN3dzUD1EUXlDU3J4U1hGVA==' -H $'Accept: text/html' -H $'Accept-Encoding: gzip, deflate' $'https://stats.konnektive.com:9200/_cat/allocation?v&pretty'
 
     let full_url = format!("{}{}", elastic_url, "/_cat/allocation?v&pretty");
     let client = reqwest::Client::builder()
@@ -397,10 +397,34 @@ pub async fn cluster_disk_alloc_check(settings_map: HashMap<String, String>) -> 
 
     let res = client.unwrap().text().await.unwrap();
 
-    let space_used = res.lines().nth(1).unwrap().split_whitespace().nth(2).unwrap();
-    let space_available = res.lines().nth(1).unwrap().split_whitespace().nth(3).unwrap();
-    let total_drive_size = res.lines().nth(1).unwrap().split_whitespace().nth(4).unwrap();
-    let percentage_used = res.lines().nth(1).unwrap().split_whitespace().nth(5).unwrap();
+    let space_used = res
+        .lines()
+        .nth(1)
+        .unwrap()
+        .split_whitespace()
+        .nth(2)
+        .unwrap();
+    let space_available = res
+        .lines()
+        .nth(1)
+        .unwrap()
+        .split_whitespace()
+        .nth(3)
+        .unwrap();
+    let total_drive_size = res
+        .lines()
+        .nth(1)
+        .unwrap()
+        .split_whitespace()
+        .nth(4)
+        .unwrap();
+    let percentage_used = res
+        .lines()
+        .nth(1)
+        .unwrap()
+        .split_whitespace()
+        .nth(5)
+        .unwrap();
 
     let message = format!("Disk Percentage Used:\n[{}]\nDisk space available:\n[{}]\nDisk space used:\n[{}]\nDisk total space:\n[{}]\n", percentage_used, space_available, space_used, total_drive_size);
     println!("{}", message.clone());

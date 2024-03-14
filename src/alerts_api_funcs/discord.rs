@@ -1,8 +1,8 @@
+use reqwest::header::CONTENT_TYPE;
+use reqwest::ClientBuilder;
+use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::process;
-use reqwest::ClientBuilder;
-use reqwest::header::CONTENT_TYPE;
-use serde_json::{json, Value};
 
 pub async fn send_discord(settings_map: &HashMap<String, String>, username: &str, message: &str) {
     let discord = settings_map

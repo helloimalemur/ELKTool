@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use config::Config;
     use crate::index_api::index_api_funcs::{cluster_disk_alloc_check, cluster_health_check};
+    use config::Config;
+    use std::collections::HashMap;
 
     #[tokio::test]
     async fn test_health_check() {
@@ -41,7 +41,11 @@ mod tests {
             .expect("COULD NOT GET elastic_pass")
             .as_str();
 
-        (settings_map.clone(), String::from(elastic_url), String::from(elastic_user), String::from(elastic_pass))
+        (
+            settings_map.clone(),
+            String::from(elastic_url),
+            String::from(elastic_user),
+            String::from(elastic_pass),
+        )
     }
-
 }
