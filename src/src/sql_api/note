@@ -1,0 +1,5 @@
+curl -X POST "localhost:9200/_sql?format=txt&pretty" -H 'Content-Type: application/json' -d'
+{
+  "query": "SELECT * FROM library ORDER BY page_count DESC LIMIT 5"
+}
+'
