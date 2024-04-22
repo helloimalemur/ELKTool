@@ -61,5 +61,5 @@ pub struct SnapshotCreationConfirmation {
     pub indices: String,
     pub ignore_unavailable: bool,
     pub include_global_state: bool,
-    pub metadata: SnapShotMetadata,
+    pub expand_wildcards: String,
 }

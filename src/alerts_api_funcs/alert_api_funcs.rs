@@ -39,7 +39,8 @@ pub async fn alert_sequence(
 
 pub(crate) async fn send_alerts(message: String, settings_map: HashMap<String, String>) {
     send_discord(&settings_map, "CapnHook", message.as_str()).await;
-    send_email(&settings_map, "ALERT", message.as_str()).await;
+    let subject = format!("ALERT:: {}", message);
+    send_email(&settings_map, subject.as_str(), message.as_str()).await;
 }
 
 // #[cfg(test)]

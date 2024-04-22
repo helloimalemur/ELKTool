@@ -14,7 +14,7 @@ use crate::index_api::index_api_funcs::{
 
 use crate::search_api::search_api_funcs::max_async_search_response_size;
 use crate::snapshot_api::snapshot_api_funcs::{
-    check_for_running_snapshot_check_space, check_threshold_and_create_snapshot,
+    check_disk_space, check_threshold_and_create_snapshot,
 };
 
 mod alerts_api_funcs;
@@ -111,10 +111,10 @@ async fn run_lm_and_backup_routine(
     );
 
     // if we're not currently creating a snapshot, and there is enough space on the drive.
-    if !check_for_running_snapshot_check_space(settings_map.clone(), policies_map.clone()).await {
+    if !check_disk_space(settings_map.clone(), policies_map.clone()).await {
         println!("Stopping Elastic built in index lifetime management service");
         stop_ilm_service(settings_map.clone(), policies_map.clone()).await; // stop built-in ILM services
-        
+
         max_async_search_response_size(settings_map.clone(), policies_map.clone()).await; // resolve async search size kibana error
 
         println!("Closing indexes over threshold");
@@ -126,8 +126,10 @@ async fn run_lm_and_backup_routine(
         println!("Checking cluster health");
         cluster_health_check(settings_map.clone()).await; // check Elastic API for status and report
 
-        if cluster_disk_alloc_check(settings_map.clone()).await { // double check drive space
-            check_threshold_and_create_snapshot(settings_map.clone(), policies_map.clone()).await; // check last_snapshot and compare with threshold
+        if cluster_disk_alloc_check(settings_map.clone()).await {
+            // double check drive space
+            check_threshold_and_create_snapshot(settings_map.clone(), policies_map.clone()).await;
+            // check last_snapshot and compare with threshold
         }; // check remaining drive space and report status
     }
 }

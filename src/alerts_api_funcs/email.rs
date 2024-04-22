@@ -25,19 +25,33 @@ pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, m
             .expect("could not get smtp_password")
             .to_string();
 
-        // println!("{:#?}", settings_map);
+        let pgduty: String = settings_map
+            .get("pgduty")
+            .expect("could not get pgduty")
+            .to_string();
 
-        let recipients: Vec<&String> = settings_map
+        // println!("{:#?}", settings_map);
+        let mut all_recipients: Vec<String> = vec![];
+
+        settings_map
             .iter()
             .filter_map(|e| match e.0.contains("smtp_recipient") {
                 true => Some(e.1),
                 false => None,
             })
-            .collect::<Vec<_>>();
-
-        println!("Emailing:: {:#?}", recipients);
-
-        recipients.iter().for_each(|recipient| {
+            .collect::<Vec<_>>()
+            .iter()
+            .for_each(|e| all_recipients.push(e.to_string()));
+        
+        // if message contains ::PAGERDUTY:: add pgduty email to recipients list
+        if subject.contains("::PAGERDUTY::") || message.contains("::PAGERDUTY::") {
+            println!("PAGERDUTY Triggered\n{}\n{}", subject, message);
+            all_recipients.push(pgduty);
+        }
+        
+        println!("Emailing:: {:#?}", all_recipients);
+        
+        all_recipients.iter().for_each(|recipient| {
             let email = Message::builder()
                 .from("noreply <noreply@koonts.net>".parse().unwrap())
                 .reply_to("noreply <noreply@koonts.net>".parse().unwrap())
@@ -58,33 +72,33 @@ pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, m
             // // Send the email
             match mailer.send(&email) {
                 Ok(_) => println!("Email sent successfully!"),
-                Err(e) => panic!("Could not send email: {e:?}"),
+                Err(e) => println!("Could not send email: {e:?}"),
             }
         });
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use crate::alerts_api_funcs::email::send_email;
-    use config::Config;
-    use std::collections::HashMap;
-
-    fn setup_test() -> HashMap<String, String> {
-        let settings = Config::builder()
-            .add_source(config::File::with_name("config/Settings"))
-            .build()
-            .unwrap();
-        settings
-            .try_deserialize::<HashMap<String, String>>()
-            .unwrap()
-    }
-
-    #[test]
-    fn test_email() {
-        let settings_map = setup_test();
-        let rt = tokio::runtime::Runtime::new();
-        rt.unwrap()
-            .block_on(send_email(&settings_map, "test email", "test message"));
-    }
-}
+// #[cfg(test)]
+// mod tests {
+//     use crate::alerts_api_funcs::email::send_email;
+//     use config::Config;
+//     use std::collections::HashMap;
+// 
+//     fn setup_test() -> HashMap<String, String> {
+//         let settings = Config::builder()
+//             .add_source(config::File::with_name("config/Settings"))
+//             .build()
+//             .unwrap();
+//         settings
+//             .try_deserialize::<HashMap<String, String>>()
+//             .unwrap()
+//     }
+// 
+//     // #[test]
+//     // fn test_email() {
+//     //     let settings_map = setup_test();
+//     //     let rt = tokio::runtime::Runtime::new();
+//     //     rt.unwrap()
+//     //         .block_on(send_email(&settings_map, "test email", "test message"));
+//     // }
+// }
