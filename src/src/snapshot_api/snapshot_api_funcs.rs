@@ -1,11 +1,11 @@
 use crate::alerts_api_funcs::discord::send_discord;
 use crate::repository_api::repo_api_funcs::get_snapshot_repo;
-use crate::snapshot_api::snapshot::{SnapShotMetadata, SnapshotCreationConfirmation, Snapshots};
-use chrono::{Datelike, Days, Local, NaiveDate};
+use crate::snapshot_api::snapshot::{SnapshotCreationConfirmation, Snapshots};
+use chrono::{Datelike, Days, Local};
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
-use sysinfo::{DiskExt, System, SystemExt};
+use sysinfo::Disks;
 
 // pub async fn create_snapshot(
 //     elastic_url: &str,
@@ -86,6 +86,7 @@ pub async fn create_yesterday_snapshot(
 
     let yesterday_year = yesterday.year();
 
+    #[allow(unused)]
     let mut yesterday_month = String::new();
     if yesterday.month().to_string().len() == 1 {
         yesterday_month = format!("0{}", yesterday.month());
@@ -93,6 +94,7 @@ pub async fn create_yesterday_snapshot(
         yesterday_month = format!("{}", yesterday.month());
     }
 
+    #[allow(unused)]
     let mut yesterday_day = String::new();
     if yesterday.day().to_string().len() == 1 {
         yesterday_day = format!("0{}", yesterday.day());
@@ -100,14 +102,9 @@ pub async fn create_yesterday_snapshot(
         yesterday_day = format!("{}", yesterday.day());
     }
 
-
     let yesterday_date_string = format!(
         "{}{}{}{}{}",
-        yesterday_year,
-        ".",
-        yesterday_month,
-        ".",
-        yesterday_day
+        yesterday_year, ".", yesterday_month, ".", yesterday_day
     );
 
     let full_url = format!(
@@ -135,7 +132,7 @@ pub async fn create_yesterday_snapshot(
 
     // {"indices":"*","ignore_unavailable":true,"include_global_state":false,"metadata":{"taken_by":"james","taken_because":"test_snapshot"}}
     let data = serde_json::to_string(&data).unwrap();
-    println!("{}", "Creating Elastic Snapshot ..");
+    println!("Creating Elastic Snapshot ..");
 
     let _client = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
@@ -236,11 +233,10 @@ pub async fn check_disk_space(
     let mut space_low = false;
 
     // check space - do not backup of less than 100GB free
-    let mut sys = System::new_all();
-    sys.refresh_all();
-    println!("{:#?}", sys.disks());
+    let disk_interface = Disks::new_with_refreshed_list();
+    println!("{:#?}", disk_interface.list());
     let pat = settings_map.get("snapshot_repo_backup_drive").unwrap();
-    for disk in sys.disks() {
+    for disk in disk_interface.list() {
         if disk.name().to_string_lossy().contains(pat.as_str()) && disk.available_space() > 0 {
             println!(
                 "{} - FREE: {}MB",
@@ -254,7 +250,6 @@ pub async fn check_disk_space(
                     .parse()
                     .unwrap()
             {
-
                 let message = format!(
                     "Elastic disk low on space: {}",
                     disk.name().to_string_lossy()
@@ -328,13 +323,12 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
         .expect("COULD NOT GET elastic_pass")
         .as_str();
 
-
     let snapshot_timestamp_path = settings_map.get("snapshot_last_timestamp").unwrap();
     let mut snapshot_timestamp_filepath = snapshot_timestamp_path.clone();
     snapshot_timestamp_filepath.push_str("last_snapshot");
     let _ = fs::remove_file(&snapshot_timestamp_filepath);
-    if let Err(_) = File::create(&snapshot_timestamp_filepath) {
-        let _ = fs::create_dir_all(&snapshot_timestamp_path);
+    if File::create(&snapshot_timestamp_filepath).is_err() {
+        let _ = fs::create_dir_all(snapshot_timestamp_path);
         let _ = File::create(&snapshot_timestamp_filepath);
     }
 
@@ -348,6 +342,7 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
 
     let yesterday_year = yesterday.year();
 
+    #[allow(unused)]
     let mut yesterday_month = String::new();
     if yesterday.month().to_string().len() == 1 {
         yesterday_month = format!("0{}", yesterday.month());
@@ -355,6 +350,7 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
         yesterday_month = format!("{}", yesterday.month());
     }
 
+    #[allow(unused)]
     let mut yesterday_day = String::new();
     if yesterday.day().to_string().len() == 1 {
         yesterday_day = format!("0{}", yesterday.day());
@@ -362,16 +358,10 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
         yesterday_day = format!("{}", yesterday.day());
     }
 
-
     let date_string = format!(
         "{}{}{}{}{}",
-        yesterday_year,
-        ".",
-        yesterday_month,
-        ".",
-        yesterday_day
+        yesterday_year, ".", yesterday_month, ".", yesterday_day
     );
-
 
     // get snapshots
     let snapshots: Snapshots = get_snapshots(elastic_url, elastic_user, elastic_pass).await;
@@ -380,9 +370,9 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
         && !snapshots.snapshots.clone().unwrap().is_empty()
     {
         // let mut init_create_snapshot = false;
-        println!("Existing snapshots:");
+        // println!("Existing snapshots:");
         for snapshot in snapshots.snapshots.unwrap().iter() {
-            println!("{}", snapshot.snapshot.clone().unwrap());
+            // println!("{}", snapshot.snapshot.clone().unwrap());
             if !snapshot
                 .snapshot
                 .clone()
@@ -390,8 +380,6 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
                 .contains(date_string.as_str())
             // if snapshot is not from today
             {
-                // if snapshot does not exist already
-
                 // create snapshot for the last threshold period
                 if settings_map
                     .get("snapshot_backup_enabled")
@@ -410,21 +398,16 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
                 init_create_snapshot = false;
                 let message = "PARTIAL BACKUP EXISTS ...";
                 send_discord(&settings_map, "CapnHook", message).await;
-            } else {
+            } else if snapshot
+                .snapshot
+                .clone()
+                .unwrap()
+                .contains(date_string.as_str())
+            {
                 init_create_snapshot = false;
                 let message = "Snapshot for yesterday exists.. skipping Elastic snapshot creation";
                 println!("{message}");
                 send_discord(&settings_map, "CapnHook", message).await;
-            }
-
-            if init_create_snapshot {
-                create_yesterday_snapshot(
-                    elastic_url,
-                    elastic_user,
-                    elastic_pass,
-                    settings_map.clone(),
-                )
-                .await;
             }
         }
     } else {
@@ -443,6 +426,15 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
             )
             .await;
         }
+    }
+    if init_create_snapshot {
+        create_yesterday_snapshot(
+            elastic_url,
+            elastic_user,
+            elastic_pass,
+            settings_map.clone(),
+        )
+        .await;
     }
 }
 
@@ -526,14 +518,14 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
 //     println!("{:?}", res);
 // }
 
-
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
-    use config::Config;
     use crate::snapshot_api::snapshot_api_funcs::create_yesterday_snapshot;
+    use config::Config;
+    use std::collections::HashMap;
 
     #[test]
+    #[ignore]
     fn test_create_snapshot() {
         let settings = Config::builder()
             .add_source(config::File::with_name("config/Settings"))
@@ -557,8 +549,12 @@ mod tests {
             .expect("COULD NOT GET elastic_pass")
             .as_str();
 
-
         let rt = tokio::runtime::Runtime::new();
-        rt.unwrap().block_on(create_yesterday_snapshot(elastic_url, elastic_user, elastic_pass, settings_map.clone()));
+        rt.unwrap().block_on(create_yesterday_snapshot(
+            elastic_url,
+            elastic_user,
+            elastic_pass,
+            settings_map.clone(),
+        ));
     }
 }

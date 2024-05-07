@@ -2,6 +2,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 use std::fmt::Error;
+use std::time::Duration;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -133,6 +134,7 @@ pub async fn get_alert_indicies(
                     )
                     .await;
                 }
+                tokio::time::sleep(Duration::new(1, 0)).await;
             }
         }
     }
@@ -215,6 +217,7 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
+    #[ignore]
     fn test_del_alert_by() {
         let settings = Config::builder()
             .add_source(config::File::with_name("config/Settings"))
