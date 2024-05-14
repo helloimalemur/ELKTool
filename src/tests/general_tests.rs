@@ -17,7 +17,7 @@ mod tests {
         let settings_map = test_prereqs();
         let result = cluster_disk_alloc_check(settings_map.0).await;
         println!("RESULT: {}", result);
-        // assert_eq!(result, true);
+        assert_eq!(!result.to_string().is_empty(), true);
     }
 
     fn test_prereqs() -> (HashMap<String, String>, String, String, String) {

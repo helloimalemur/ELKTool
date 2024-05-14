@@ -3,6 +3,7 @@ use crate::ilm_api::ilm_api_funcs::set_number_of_replicas_to_zero;
 use crate::index_api::elasticindex::ElasticIndex;
 use crate::index_api::healthcheck::HealthCheck;
 use chrono::{Local, NaiveDate};
+use reqwest::Response;
 use std::collections::HashMap;
 use std::thread;
 use std::time::{Duration as SysDuration, Duration};
@@ -76,7 +77,7 @@ pub async fn close_indexes_over_age_threshold(
                                 index.index.clone().unwrap(),
                             )
                             .await;
-                            thread::sleep(SysDuration::new(0, 600));
+                            // thread::sleep(SysDuration::new(0, 600));
                         }
                     } else {
                         // println!("{}", index.index.clone().unwrap());
@@ -105,22 +106,27 @@ async fn close_index(
         .header("Cache-Control", "max-age=0")
         .header("Accept", "text/html")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
-    let res = client.unwrap().text().await;
-    println!("Success: {:?}", res);
+    if let Ok(cl) = client {
+        let res = cl.text().await;
+        println!("Close Index Success: {:?}", res);
 
-    // get indicies
-    // println!("{}", res);
+        // get indicies
+        // println!("{}", res);
 
-    // let res = client.unwrap().text().await.unwrap();
+        // let res = client.unwrap().text().await.unwrap();
 
-    // deserialize from json to Vec of ElasticSearch Index obj
-    // let res: Vec<ElasticIndex> = match serde_json::from_str(res.clone().as_str()) {
-    //     Ok(r) => r,
-    //     Err(e) => panic!("{}", e.to_string())
-    // };
+        // deserialize from json to Vec of ElasticSearch Index obj
+        // let res: Vec<ElasticIndex> = match serde_json::from_str(res.clone().as_str()) {
+        //     Ok(r) => r,
+        //     Err(e) => panic!("{}", e.to_string())
+        // };
+    } else {
+        println!("Close Index Failure ..");
+    }
 }
 
 pub async fn delete_indexes_over_age_threshold(
@@ -190,7 +196,7 @@ pub async fn delete_indexes_over_age_threshold(
                             index.index.clone().unwrap(),
                         )
                         .await;
-                        thread::sleep(SysDuration::new(0, 600));
+                        // thread::sleep(SysDuration::new(0, 600));
                     }
                 } else {
                     // println!("{}", index.index.clone().unwrap());
@@ -219,6 +225,7 @@ async fn delete_index(
         .header("Cache-Control", "max-age=0")
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
@@ -254,27 +261,32 @@ pub async fn get_open_index_data(
         .header("Cache-Control", "max-age=0")
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
-    // get indicies
-    let res = client.unwrap().text().await.unwrap();
-    // deserialize from json to Vec of ElasticSearch Index obj
-    let res: Vec<ElasticIndex> = match serde_json::from_str(res.clone().as_str()) {
-        Ok(r) => r,
-        Err(e) => panic!("{}", e.to_string()),
-    };
+    if let Ok(cl) = client {
+        // get indicies
+        let res = cl.text().await.unwrap();
+        // deserialize from json to Vec of ElasticSearch Index obj
+        let res: Vec<ElasticIndex> = match serde_json::from_str(res.clone().as_str()) {
+            Ok(r) => r,
+            Err(e) => panic!("{}", e.to_string()),
+        };
 
-    // println!("{:?}", res);
+        // println!("{:?}", res);
 
-    // print indicies
-    // for (x,i) in res.clone().iter().enumerate() {
-    //     if i.index.clone().unwrap().contains("2023.03") {
-    //         println!("{}", i.index.clone().unwrap().as_str());
-    //     }
-    // }
+        // print indicies
+        // for (x,i) in res.clone().iter().enumerate() {
+        //     if i.index.clone().unwrap().contains("2023.03") {
+        //         println!("{}", i.index.clone().unwrap().as_str());
+        //     }
+        // }
 
-    res
+        res
+    } else {
+        panic!("could not get open index");
+    }
 }
 
 pub async fn cluster_health_check(settings_map: HashMap<String, String>) -> String {
@@ -307,6 +319,7 @@ pub async fn cluster_health_check(settings_map: HashMap<String, String>) -> Stri
         .header("Cache-Control", "max-age=0")
         .header("Accept", "text/html")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
@@ -335,7 +348,7 @@ pub async fn cluster_health_check(settings_map: HashMap<String, String>) -> Stri
         }
 
         // check again
-        thread::sleep(Duration::new(7, 0));
+        // thread::sleep(Duration::new(7, 0));
         let client = reqwest::Client::builder()
             .danger_accept_invalid_certs(true)
             .build()
@@ -345,6 +358,7 @@ pub async fn cluster_health_check(settings_map: HashMap<String, String>) -> Stri
             .header("Cache-Control", "max-age=0")
             .header("Accept", "text/html")
             .header("Accept-Encoding", "gzip, deflate")
+            .timeout(Duration::new(2, 0))
             .send()
             .await;
 
@@ -392,6 +406,7 @@ pub async fn cluster_disk_alloc_check(settings_map: HashMap<String, String>) -> 
         .header("Cache-Control", "max-age=0")
         .header("Accept", "text/html")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 

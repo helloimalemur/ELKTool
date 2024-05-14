@@ -42,15 +42,15 @@ pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, m
             .collect::<Vec<_>>()
             .iter()
             .for_each(|e| all_recipients.push(e.to_string()));
-        
+
         // if message contains ::PAGERDUTY:: add pgduty email to recipients list
         if subject.contains("::PAGERDUTY::") || message.contains("::PAGERDUTY::") {
             println!("PAGERDUTY Triggered\n{}\n{}", subject, message);
             all_recipients.push(pgduty);
         }
-        
+
         println!("Emailing:: {:#?}", all_recipients);
-        
+
         all_recipients.iter().for_each(|recipient| {
             let email = Message::builder()
                 .from("noreply <noreply@koonts.net>".parse().unwrap())
@@ -78,27 +78,28 @@ pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, m
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::alerts_api_funcs::email::send_email;
-//     use config::Config;
-//     use std::collections::HashMap;
-// 
-//     fn setup_test() -> HashMap<String, String> {
-//         let settings = Config::builder()
-//             .add_source(config::File::with_name("config/Settings"))
-//             .build()
-//             .unwrap();
-//         settings
-//             .try_deserialize::<HashMap<String, String>>()
-//             .unwrap()
-//     }
-// 
-//     // #[test]
-//     // fn test_email() {
-//     //     let settings_map = setup_test();
-//     //     let rt = tokio::runtime::Runtime::new();
-//     //     rt.unwrap()
-//     //         .block_on(send_email(&settings_map, "test email", "test message"));
-//     // }
-// }
+#[cfg(test)]
+mod tests {
+    use crate::alerts_api_funcs::email::send_email;
+    use config::Config;
+    use std::collections::HashMap;
+
+    fn setup_test() -> HashMap<String, String> {
+        let settings = Config::builder()
+            .add_source(config::File::with_name("config/Settings"))
+            .build()
+            .unwrap();
+        settings
+            .try_deserialize::<HashMap<String, String>>()
+            .unwrap()
+    }
+
+    #[test]
+    #[ignore]
+    fn test_email() {
+        let settings_map = setup_test();
+        let rt = tokio::runtime::Runtime::new();
+        rt.unwrap()
+            .block_on(send_email(&settings_map, "test email", "test message"));
+    }
+}

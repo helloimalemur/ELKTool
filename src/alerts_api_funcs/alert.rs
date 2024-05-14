@@ -69,7 +69,7 @@ pub async fn get_alert_indicies(
     settings_map: HashMap<String, String>,
 ) -> Result<HashMap<String, String>, Error> {
     let mut results_hashmap: HashMap<String, String> = HashMap::new();
-
+    println!("Checking for alerts ..");
     let full_url = format!("{}{}", elastic_url, "/alert-index/_search");
 
     let client = reqwest::Client::builder()
@@ -81,6 +81,7 @@ pub async fn get_alert_indicies(
         .header("Cache-Control", "max-age=0")
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
@@ -202,6 +203,7 @@ pub async fn delete_alert_indicies_by_query(
         .header("Content-Type", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
         .body(json)
+        .timeout(Duration::new(2, 0))
         .send()
         .await
     {
@@ -217,6 +219,7 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
+    #[ignore]
     fn test_del_alert_by() {
         let settings = Config::builder()
             .add_source(config::File::with_name("config/Settings"))

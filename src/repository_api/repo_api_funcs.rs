@@ -1,4 +1,5 @@
 use crate::repository_api::repository::Repository;
+use std::time::Duration;
 
 pub async fn get_snapshot_repo(
     elastic_url: &str,
@@ -16,6 +17,7 @@ pub async fn get_snapshot_repo(
         .header("Cache-Control", "max-age=0")
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 

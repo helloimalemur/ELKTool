@@ -3,6 +3,7 @@ use crate::ilm_api::ilm_api_funcs::stop_ilm_service;
 use chrono::Local;
 use config::Config;
 use std::collections::HashMap;
+use std::process::Command;
 use std::thread;
 use std::time::Duration;
 
@@ -16,6 +17,7 @@ use crate::search_api::search_api_funcs::max_async_search_response_size;
 use crate::snapshot_api::snapshot_api_funcs::{
     check_disk_space, check_threshold_and_create_snapshot,
 };
+use crate::transform::{parse_to_new_haproxy_field, start_transforms};
 
 mod alerts_api_funcs;
 mod ilm_api;
@@ -23,6 +25,7 @@ mod repository_api;
 mod search_api;
 mod snapshot_api;
 mod tests;
+mod transform;
 
 #[tokio::main]
 async fn main() {
@@ -68,6 +71,12 @@ async fn main() {
         .get("alerting_enabled")
         .expect("COULD NOT GET alerting_enabled")
         .as_str();
+    let parallelism = settings_map
+        .get("parallelism")
+        .expect("COULD NOT GET parallelism")
+        .to_string();
+
+    let _ = Command::new("ulimit").arg("-n").arg("999999").spawn();
 
     println!("Running.. ");
 
@@ -76,6 +85,27 @@ async fn main() {
     if run_lm_on_start.contains("true") {
         run_lm_and_backup_routine(settings_map.clone(), policies_map.clone()).await;
     }
+
+    let mut default_parallel = 1;
+
+    if let Ok(ap) = thread::available_parallelism() {
+        default_parallel = ap.get();
+    }
+
+    match parallelism.as_str() {
+        "full" => {
+            if default_parallel >= 2 {
+                default_parallel = default_parallel / 2;
+            }
+        }
+        &_ => {
+            if default_parallel >= 2 {
+                default_parallel = default_parallel / 2;
+            }
+        }
+    }
+
+    println!("Parallelism: {} {}", parallelism, default_parallel);
 
     // main outer loop
     let mut timestamp = Local::now().timestamp();
@@ -91,13 +121,27 @@ async fn main() {
             .await;
         }
 
+        // run index transforms
+        let mut handles = vec![];
+        for _i in 0..default_parallel {
+            let sm = settings_map.clone();
+            let tk = tokio::runtime::Runtime::new();
+            let handle = thread::spawn(move || tk.unwrap().block_on(start_transforms(sm)));
+            handles.push(handle);
+            let _ = tokio::time::sleep(Duration::new(0, 200000000)).await;
+        }
+        for handle in handles {
+            // handle.join().unwrap()
+            if let Err(_) = handle.join() {
+                println!("WARNING: could not join on handle")
+            }
+        }
+
         // inner loop based on delay/threshold variable
         if Local::now().timestamp() > timestamp + delay.parse::<i64>().unwrap() {
             timestamp = Local::now().timestamp();
             run_lm_and_backup_routine(settings_map.clone(), policies_map.clone()).await;
         }
-
-        thread::sleep(Duration::new(7, 0));
     }
 }
 

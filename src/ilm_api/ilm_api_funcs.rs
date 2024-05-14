@@ -1,6 +1,7 @@
 use crate::index_api::replicassetting::ReplicasSetting;
 use serde_json::json;
 use std::collections::HashMap;
+use std::time::Duration;
 
 pub async fn stop_ilm_service(
     settings_map: HashMap<String, String>,
@@ -33,6 +34,7 @@ pub async fn stop_ilm_service(
         .header("Cache-Control", "max-age=0")
         .header("Accept", "text/html")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
@@ -74,16 +76,21 @@ pub async fn set_number_of_replicas_to_zero(
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
         .json(&json)
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
-    let res = client.unwrap().text().await.unwrap();
+    if let Ok(cl) = client {
+        if let Ok(res) = cl.text().await {
+            let res: ReplicasSetting = match serde_json::from_str(res.clone().as_str()) {
+                Ok(r) => r,
+                Err(e) => panic!("{}", e.to_string()),
+            };
+            println!("{:?}", res);
+        }
+    } else {
+        println!("WARNING: could not set ilm!!");
+    }
 
     // deserialize from json to Vec of ElasticSearch Index obj
-    let res: ReplicasSetting = match serde_json::from_str(res.clone().as_str()) {
-        Ok(r) => r,
-        Err(e) => panic!("{}", e.to_string()),
-    };
-
-    println!("{:?}", res);
 }
