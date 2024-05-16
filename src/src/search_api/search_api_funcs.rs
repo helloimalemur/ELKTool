@@ -1,6 +1,7 @@
 use serde_derive::Deserialize;
 use serde_derive::Serialize;
 use std::collections::HashMap;
+use std::time::Duration;
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -14,7 +15,7 @@ pub struct Transient {
     #[serde(rename = "search.max_async_search_response_size")]
     pub search_max_async_search_response_size: String,
 }
-
+// set async search max size (to resolve error in kibana)
 pub async fn max_async_search_response_size(
     settings_map: HashMap<String, String>,
     _policies_map: HashMap<String, String>,
@@ -54,6 +55,7 @@ pub async fn max_async_search_response_size(
         .header("Content-Type", "application/json")
         .header("Accept", "text/html")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 

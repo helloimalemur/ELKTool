@@ -2,6 +2,8 @@ use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use std::collections::HashMap;
+use std::thread;
+use std::time::Duration;
 
 pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, message: &str) {
     if settings_map
@@ -24,7 +26,10 @@ pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, m
             .get("smtp_password")
             .expect("could not get smtp_password")
             .to_string();
-
+        let smtp_from: String = settings_map
+            .get("smtp_from")
+            .expect("could not get smtp_from")
+            .to_string();
         let pgduty: String = settings_map
             .get("pgduty")
             .expect("could not get pgduty")
@@ -53,8 +58,8 @@ pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, m
 
         all_recipients.iter().for_each(|recipient| {
             let email = Message::builder()
-                .from("noreply <noreply@koonts.net>".parse().unwrap())
-                .reply_to("noreply <noreply@koonts.net>".parse().unwrap())
+                .from(smtp_from.parse().unwrap())
+                .reply_to(smtp_from.parse().unwrap())
                 .to(recipient.parse().unwrap())
                 .subject(subject)
                 .header(ContentType::TEXT_PLAIN)
@@ -74,31 +79,33 @@ pub async fn send_email(settings_map: &HashMap<String, String>, subject: &str, m
                 Ok(_) => println!("Email sent successfully!"),
                 Err(e) => println!("Could not send email: {e:?}"),
             }
+            thread::sleep(Duration::new(1, 500000000)); // sleep for 1.5 seconds
         });
     }
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use crate::alerts_api_funcs::email::send_email;
-//     use config::Config;
-//     use std::collections::HashMap;
-//
-//     fn setup_test() -> HashMap<String, String> {
-//         let settings = Config::builder()
-//             .add_source(config::File::with_name("config/Settings"))
-//             .build()
-//             .unwrap();
-//         settings
-//             .try_deserialize::<HashMap<String, String>>()
-//             .unwrap()
-//     }
-//
-//     // #[test]
-//     // fn test_email() {
-//     //     let settings_map = setup_test();
-//     //     let rt = tokio::runtime::Runtime::new();
-//     //     rt.unwrap()
-//     //         .block_on(send_email(&settings_map, "test email", "test message"));
-//     // }
-// }
+#[cfg(test)]
+mod tests {
+    use crate::alerts_api_funcs::email::send_email;
+    use config::Config;
+    use std::collections::HashMap;
+
+    fn setup_test() -> HashMap<String, String> {
+        let settings = Config::builder()
+            .add_source(config::File::with_name("config/Settings"))
+            .build()
+            .unwrap();
+        settings
+            .try_deserialize::<HashMap<String, String>>()
+            .unwrap()
+    }
+
+    #[test]
+    // #[ignore]
+    fn test_email() {
+        let settings_map = setup_test();
+        let rt = tokio::runtime::Runtime::new();
+        rt.unwrap()
+            .block_on(send_email(&settings_map, "test email", "test message"));
+    }
+}

@@ -5,6 +5,7 @@ use chrono::{Datelike, Days, Local};
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
+use std::time::Duration;
 use sysinfo::Disks;
 
 // pub async fn create_snapshot(
@@ -134,7 +135,7 @@ pub async fn create_yesterday_snapshot(
     let data = serde_json::to_string(&data).unwrap();
     println!("Creating Elastic Snapshot ..");
 
-    let _client = reqwest::Client::builder()
+    let client = reqwest::Client::builder()
         .danger_accept_invalid_certs(true)
         .build()
         .unwrap()
@@ -142,9 +143,12 @@ pub async fn create_yesterday_snapshot(
         .basic_auth(elastic_user, Some(elastic_pass))
         .header("Content-Type", "application/json")
         .body(data)
+        .timeout(Duration::new(2, 0))
         .send()
-        .await
-        .unwrap();
+        .await;
+    if client.is_err() {
+        println!("{:?}", client.err())
+    }
 }
 
 pub async fn get_snapshots(elastic_url: &str, elastic_user: &str, elastic_pass: &str) -> Snapshots {
@@ -159,6 +163,7 @@ pub async fn get_snapshots(elastic_url: &str, elastic_user: &str, elastic_pass: 
         .header("Cache-Control", "max-age=0")
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
@@ -201,6 +206,7 @@ pub async fn get_available_space_on_drive(
         .header("Cache-Control", "max-age=0")
         .header("Accept", "application/json")
         .header("Accept-Encoding", "gzip, deflate")
+        .timeout(Duration::new(2, 0))
         .send()
         .await;
 
@@ -291,11 +297,13 @@ pub async fn check_threshold_and_create_snapshot(
 
     let now = Local::now().timestamp() as i128;
     let mut last_snapshot: i128 = 0;
-    let read_last_snapshot =
-        fs::read_to_string(settings_map.get("snapshot_last_timestamp").unwrap());
-    if read_last_snapshot.is_ok() {
-        last_snapshot = read_last_snapshot.unwrap().trim().parse::<i128>().unwrap();
+
+    if let Some(read_last_snapshot) = settings_map.get("snapshot_last_timestamp") {
+        if let Ok(r) = read_last_snapshot.trim().parse::<i128>() {
+            last_snapshot = r
+        }
     }
+
     let diff = now - last_snapshot;
 
     let repo = get_snapshot_repo(elastic_url, elastic_user, elastic_pass).await;
