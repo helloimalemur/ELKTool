@@ -1,22 +1,17 @@
 use chrono::Local;
 use config::Config;
 use elktool_lib::ilm_api::ilm_api_funcs::stop_ilm_service;
-use elktool_lib::index_api::index_api_funcs::{
+use elktool_lib::lifetime_api::lifetime_api_funcs::{
     close_indexes_over_age_threshold, cluster_disk_alloc_check, cluster_health_check,
     delete_indexes_over_age_threshold,
+};
+use elktool_lib::search_settings::search_settings::max_async_search_response_size;
+use elktool_lib::snapshot_api::snapshot_api_funcs::{
+    check_disk_space, check_threshold_and_create_snapshot,
 };
 use std::collections::HashMap;
 use std::process::Command;
 use std::time::Duration;
-
-use crate::search_settings::search_settings::max_async_search_response_size;
-use crate::snapshot_api::snapshot_api_funcs::{
-    check_disk_space, check_threshold_and_create_snapshot,
-};
-
-mod repository_settings;
-mod search_settings;
-mod snapshot_api;
 
 #[tokio::main]
 async fn main() {

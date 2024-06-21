@@ -1,4 +1,4 @@
-use crate::index_api::replicassetting::ReplicasSetting;
+use crate::common::replicasettings_entities::ReplicasSetting;
 use serde_json::json;
 use std::collections::HashMap;
 use std::time::Duration;

@@ -1,0 +1,8 @@
+# then parse and add field to indicies using update api
+[[index]]
+enabled = "true"
+index_prefix = "test-app-index*"
+needle = "test"
+alert = "true"
+#am_alert = "false"
+total_to_process = 3000

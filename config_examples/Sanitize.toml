@@ -1,0 +1,12 @@
+# then parse and add field to indicies using update api
+[[haproxy]]
+index_prefix = "haproxy-files-TODAY"
+check_field_value = "sanitized"
+total_to_process = 4000
+multiplier = 8
+
+[[haproxy]]
+index_prefix = "haproxy-files-2024.05.*"
+check_field_value = "sanitized"
+total_to_process = 3000
+multiplier = 3

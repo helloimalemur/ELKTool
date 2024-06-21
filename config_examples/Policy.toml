@@ -1,0 +1,5 @@
+# HAPROXY
+close_haproxy="30"
+delete_haproxy="90"
+close_restored-haproxy="6"
+delete_restored-haproxy="90"

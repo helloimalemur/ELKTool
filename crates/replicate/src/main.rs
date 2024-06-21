@@ -1,8 +1,7 @@
 use chrono::Local;
 use config::Config;
-use elktool_lib::alerts_api_funcs::alert_api_funcs::alert_sequence;
-use elktool_lib::transform::haproxy_transforms::start_haproxy_transforms;
-use elktool_lib::transform::jdbc_transforms::start_jdbc_transforms;
+use elktool_lib::replicate::haproxy_replicate::start_replicate_haproxy;
+use elktool_lib::replicate::jdbc_replicate::start_replicate_jdbc;
 use std::collections::HashMap;
 use std::process::Command;
 use std::thread;
@@ -43,27 +42,18 @@ async fn main() {
         .try_deserialize::<HashMap<String, String>>()
         .unwrap();
 
-    // get elastic user settings
-    let elastic_url = settings_map
-        .get("elastic_url")
-        .expect("COULD NOT GET elastic_url")
-        .as_str();
-    let elastic_user = settings_map
-        .get("elastic_user")
-        .expect("COULD NOT GET elastic_user")
-        .as_str();
-    let elastic_pass = settings_map
-        .get("elastic_pass")
-        .expect("COULD NOT GET elastic_pass")
-        .as_str();
-    let alerting_enabled = settings_map
-        .get("alerting_enabled")
-        .expect("COULD NOT GET alerting_enabled")
-        .as_str();
     let parallelism = settings_map
         .get("parallelism")
         .expect("COULD NOT GET parallelism")
         .to_string();
+
+    // let replicate_settings = Config::builder()
+    //     .add_source(config::File::with_name("config/Replicate"))
+    //     .build()
+    //     .unwrap();
+    // let _replicate_settings_map = replicate_settings
+    //     .try_deserialize::<HashMap<String, String>>()
+    //     .unwrap();
 
     let _ = Command::new("ulimit").arg("-n").arg("999999").spawn();
 
@@ -95,27 +85,21 @@ async fn main() {
     // main outer loop
     loop {
         // run alert sequence
-        if alerting_enabled.contains("true") {
-            let _ = alert_sequence(
-                elastic_url,
-                elastic_user,
-                elastic_pass,
-                settings_map.clone(),
-            )
-            .await;
-        }
-
-        // run index transforms
+        // if alerting_enabled.contains("true") {
+        //     let _ = alert_sequence(
+        //         elastic_url,
+        //         elastic_user,
+        //         elastic_pass,
+        //         settings_map.clone(),
+        //     )
+        //         .await;
+        // }
+        // sanitize
         thread_func!(
-            start_haproxy_transforms,
+            start_replicate_haproxy,
             settings_map.clone(),
             default_parallel
         );
-        // jdbc transforms
-        thread_func!(
-            start_jdbc_transforms,
-            settings_map.clone(),
-            default_parallel
-        );
+        thread_func!(start_replicate_jdbc, settings_map.clone(), default_parallel);
     }
 }

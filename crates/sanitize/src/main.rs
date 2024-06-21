@@ -1,8 +1,7 @@
 use chrono::Local;
 use config::Config;
 use elktool_lib::alerts_api_funcs::alert_api_funcs::alert_sequence;
-use elktool_lib::transform::haproxy_transforms::start_haproxy_transforms;
-use elktool_lib::transform::jdbc_transforms::start_jdbc_transforms;
+use elktool_lib::sanitize::haproxy_sanitize::start_sanitize_haproxy;
 use std::collections::HashMap;
 use std::process::Command;
 use std::thread;
@@ -104,16 +103,9 @@ async fn main() {
             )
             .await;
         }
-
-        // run index transforms
+        // sanitize
         thread_func!(
-            start_haproxy_transforms,
-            settings_map.clone(),
-            default_parallel
-        );
-        // jdbc transforms
-        thread_func!(
-            start_jdbc_transforms,
+            start_sanitize_haproxy,
             settings_map.clone(),
             default_parallel
         );

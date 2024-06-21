@@ -1,0 +1,17 @@
+[[haproxy]]
+index_prefix = "haproxy-files-TODAY"
+source_field = "message"
+destination_field = "loginId"
+transform_type = "url_param"
+needle = "loginId="
+total_to_process = 6000
+multiplier = 8
+
+[[jdbc]]
+index_prefix = "jdbc_mysql-TODAY"
+source_field = "response_body"
+destination_field = "response_body_only"
+transform_type = "response_body_needle_type"
+needle = "\n"
+total_to_process = 2000
+multiplier = 4

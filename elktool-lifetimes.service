@@ -6,6 +6,7 @@ LimitNOFILE=18192:19384
 Type=simple
 User=root
 Group=root
+Restart=always
 ExecStart=/var/lib/elktool/run-lifetimes.sh
 
 [Install]

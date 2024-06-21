@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::index_api::index_api_funcs::{cluster_disk_alloc_check, cluster_health_check};
+    use crate::lifetime_api::lifetime_api_funcs::{cluster_disk_alloc_check, cluster_health_check};
     use config::Config;
     use std::collections::HashMap;
 
