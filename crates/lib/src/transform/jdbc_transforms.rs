@@ -87,6 +87,50 @@ pub async fn parse_to_new_jdbc_field(
             if let Some(index_id) = index.clone().id {
                 if let Some(index_name) = index.clone().index {
                     if let Some(response_body) = index.clone().source.unwrap().response_body {
+                        if response_body.contains(&"HTTP/1.1") {
+                            rcount += 1;
+                            let mut status_code =
+                                response_body.split(&"HTTP/1.1".to_string()).last();
+
+                            // println!("{:?}", index);
+                            // let split_by_param: Vec<&str> = response_body.split('&').collect();
+                            // // index name
+                            // println!("{:?} - {:?}", index.index, index.id);
+                            // println!("{:?}", response_body);
+                            // let index_name = index.clone().index.unwrap();
+                            // // index id
+                            // let index_id = index.clone().id.unwrap();
+                            // param value
+                            // let split_by_param_res = split_by_param.first().unwrap().to_string();
+
+                            // let split_by_ws_res: Vec<&str> = split_by_param_res.split_whitespace().collect();
+                            let mut new_field_value = String::new();
+                            // println!("{}", new_field_value);
+                            if let Some(s) = status_code {
+                                let sub = s.substring(0, 4);
+                                let trimmed = sub.trim();
+                                new_field_value = trimmed.to_string();
+                            }
+
+                            // println!("{new_field_value}");
+                            changes.push(JDBCIndexUpdate {
+                                index_name,
+                                index_id,
+                                new_field_name: "outbound_status_code".to_string(),
+                                new_field_value,
+                            })
+                        } else {
+                            let index_name = index.clone().index.unwrap();
+                            let index_id = index.clone().id.unwrap();
+
+                            changes.push(JDBCIndexUpdate {
+                                index_name,
+                                index_id,
+                                new_field_name: "outbound_status_code".to_string(),
+                                new_field_value: "".to_string(),
+                            })
+                        }
+
                         if response_body.contains(&needle) {
                             rcount += 1;
                             let response_body = response_body.split(&needle.to_string()).last();
@@ -115,6 +159,8 @@ pub async fn parse_to_new_jdbc_field(
                             //     // exit(1);
                             //     // new_field_value = split_by_ws_res
                             // }
+                            let index_name = index.clone().index.unwrap();
+                            let index_id = index.clone().id.unwrap();
 
                             changes.push(JDBCIndexUpdate {
                                 index_name,
@@ -593,14 +639,14 @@ mod tests {
 
     #[test]
     // #[ignore]
-    fn test_transform() {
+    fn test_jdbc_transform() {
         let config = config();
         let settings_map = config.try_deserialize::<HashMap<String, String>>().unwrap();
 
         let tk = tokio::runtime::Runtime::new();
         tk.unwrap().block_on(parse_to_new_jdbc_field(
-            "jdbc_mysql-2024.05.21".to_string(),
-            // "jdbc_mysql-TODAY".to_string(),
+            // "jdbc_mysql-2024.05.21".to_string(),
+            "jdbc_mysql-TODAY".to_string(),
             // "jdbc_mysql-YESTERDAY".to_string(),
             "response_body".to_string(),
             "response_body_only".to_string(),

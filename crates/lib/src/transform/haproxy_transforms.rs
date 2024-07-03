@@ -94,7 +94,10 @@ pub async fn parse_to_new_haproxy_field(
             // todo()! custom 2nd needle in config
             if message.contains(&"name=\"loginId\"#015#012#015#012") {
                 rcount += 1;
-                if let Some(split_by_needle0) = message.split(&"name=\"loginId\"#015#012#015#012".to_string()).last() {
+                if let Some(split_by_needle0) = message
+                    .split(&"name=\"loginId\"#015#012#015#012".to_string())
+                    .last()
+                {
                     // println!("{:?}", index);
                     let split_by_param0: Vec<&str> = split_by_needle0.split("#015#012").collect();
                     // index name
@@ -103,7 +106,8 @@ pub async fn parse_to_new_haproxy_field(
                     let index_id0 = index.clone().id.unwrap();
                     // param value
                     if let Some(split_by_param_res0) = split_by_param0.first() {
-                        let split_by_ws_res0: Vec<&str> = split_by_param_res0.split_whitespace().collect();
+                        let split_by_ws_res0: Vec<&str> =
+                            split_by_param_res0.split_whitespace().collect();
                         let mut new_field_value0 = String::new();
                         // println!("{}", new_field_value);
                         if let Some(s0) = split_by_ws_res0.first() {
@@ -122,7 +126,8 @@ pub async fn parse_to_new_haproxy_field(
 
             if message.contains(&"name='loginId'") {
                 rcount += 1;
-                if let Some(split_by_needle1) = message.split(&"name='loginId'".to_string()).last() {
+                if let Some(split_by_needle1) = message.split(&"name='loginId'".to_string()).last()
+                {
                     // println!("{:?}", index);
                     let split_by_param1: Vec<&str> = split_by_needle1.split("-----").collect();
                     // index name
@@ -131,7 +136,8 @@ pub async fn parse_to_new_haproxy_field(
                     let index_id1 = index.clone().id.unwrap();
                     // param value
                     if let Some(split_by_param_res1) = split_by_param1.first() {
-                        let split_by_ws_res1: Vec<&str> = split_by_param_res1.split_whitespace().collect();
+                        let split_by_ws_res1: Vec<&str> =
+                            split_by_param_res1.split_whitespace().collect();
                         let mut new_field_value1 = String::new();
                         // println!("{}", new_field_value);
                         if let Some(s1) = split_by_ws_res1.first() {
@@ -160,7 +166,8 @@ pub async fn parse_to_new_haproxy_field(
                     let index_id2 = index.clone().id.unwrap();
                     // param value
                     if let Some(split_by_param_res2) = split_by_param2.first() {
-                        let split_by_ws_res2: Vec<&str> = split_by_param_res2.split_whitespace().collect();
+                        let split_by_ws_res2: Vec<&str> =
+                            split_by_param_res2.split_whitespace().collect();
                         let mut new_field_value2 = String::new();
                         // println!("{}", new_field_value);
                         if let Some(s2) = split_by_ws_res2.first() {
@@ -177,8 +184,6 @@ pub async fn parse_to_new_haproxy_field(
                 }
             }
 
-
-
             if message.contains(&"\"POST") {
                 rcount += 1;
                 if let Some(split_by_needle3) = message.split(&"\"POST".to_string()).last() {
@@ -190,7 +195,8 @@ pub async fn parse_to_new_haproxy_field(
                     let index_id3 = index.clone().id.unwrap();
                     // param value
                     if let Some(split_by_param_res3) = split_by_param3.first() {
-                        let split_by_ws_res3: Vec<&str> = split_by_param_res3.split_whitespace().collect();
+                        let split_by_ws_res3: Vec<&str> =
+                            split_by_param_res3.split_whitespace().collect();
                         let mut new_field_value3 = String::new();
                         // println!("{}", new_field_value);
                         if let Some(s3) = split_by_ws_res3.first() {
@@ -207,7 +213,6 @@ pub async fn parse_to_new_haproxy_field(
                 }
             }
 
-
             if message.contains(&needle) {
                 rcount += 1;
                 if let Some(split_by_needle4) = message.split(&needle.to_string()).last() {
@@ -219,7 +224,8 @@ pub async fn parse_to_new_haproxy_field(
                     let index_id4 = index.clone().id.unwrap();
                     // param value
                     if let Some(split_by_param_res4) = split_by_param4.first() {
-                        let split_by_ws_res4: Vec<&str> = split_by_param_res4.split_whitespace().collect();
+                        let split_by_ws_res4: Vec<&str> =
+                            split_by_param_res4.split_whitespace().collect();
                         let mut new_field_value4 = String::new();
                         // println!("{}", new_field_value);
                         if let Some(s4) = split_by_ws_res4.first() {

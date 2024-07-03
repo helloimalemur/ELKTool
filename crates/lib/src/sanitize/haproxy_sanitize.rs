@@ -228,8 +228,10 @@ pub async fn sanitize_haproxy_field(
                             new_field_value0 = s.to_string();
                         }
                         // if found string replace it in the original index
-                        let replacer_from0 = format!("{}{}", "cardNumber#22#0D#0A#0D#0A", new_field_value0);
-                        let replacer_to0 = format!("{}{}", "cardNumber#22#0D#0A#0D#0A", "UNAVAILABLE_01");
+                        let replacer_from0 =
+                            format!("{}{}", "cardNumber#22#0D#0A#0D#0A", new_field_value0);
+                        let replacer_to0 =
+                            format!("{}{}", "cardNumber#22#0D#0A#0D#0A", "UNAVAILABLE_01");
                         msg = msg.replace(replacer_from0.as_str(), replacer_to0.as_str());
                     }
                 }
@@ -257,8 +259,10 @@ pub async fn sanitize_haproxy_field(
                             new_field_value1 = s.to_string();
                         }
                         // if found string replace it in the original index
-                        let replacer_from1 = format!("{}{}", "cardNumber\"#015#012#015#", new_field_value1);
-                        let replacer_to1 = format!("{}{}", "cardNumber\"#015#012#015#", "UNAVAILABLE_02");
+                        let replacer_from1 =
+                            format!("{}{}", "cardNumber\"#015#012#015#", new_field_value1);
+                        let replacer_to1 =
+                            format!("{}{}", "cardNumber\"#015#012#015#", "UNAVAILABLE_02");
                         msg = msg.replace(replacer_from1.as_str(), replacer_to1.as_str());
                     }
                 }
@@ -286,8 +290,10 @@ pub async fn sanitize_haproxy_field(
                             new_field_value2 = s.to_string();
                         }
                         // if found string replace it in the original index
-                        let replacer_from2 = format!("{}{}", "cardNumber#015#012#015#0", new_field_value2);
-                        let replacer_to2 = format!("{}{}", "cardNumber#015#012#015#0", "UNAVAILABLE_03");
+                        let replacer_from2 =
+                            format!("{}{}", "cardNumber#015#012#015#0", new_field_value2);
+                        let replacer_to2 =
+                            format!("{}{}", "cardNumber#015#012#015#0", "UNAVAILABLE_03");
                         msg = msg.replace(replacer_from2.as_str(), replacer_to2.as_str());
                     }
                 }
@@ -373,8 +379,6 @@ pub async fn sanitize_haproxy_field(
                     }
                 }
             }
-
-
 
             // "cardNumber" AND "UNAVAILABLE" AND NOT "{UNAVAILABLE<!DOCTYPE html>" AND NOT "UNAVAILABLEMUNAVAILABLEaUNAVAILABLEyUNAVAILABLE" AND sanitized : **
             // println!("{msg}");
