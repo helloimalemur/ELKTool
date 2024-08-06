@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elktool-sanitize
+  labels:
+    app: elktool-sanitize
+  namespace: elktool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elktool-sanitize
+  template:
+    metadata:
+      labels:
+        app: elktool-sanitize
+    spec:
+      containers:
+        - name: elktool-sanitize
+          image: elktool-sanitize:latest
+          imagePullPolicy: Never

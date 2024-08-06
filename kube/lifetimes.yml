@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elktool-lifetimes
+  labels:
+    app: elktool-lifetimes
+  namespace: elktool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elktool-lifetimes
+  template:
+    metadata:
+      labels:
+        app: elktool-lifetimes
+    spec:
+      containers:
+        - name: elktool-lifetimes
+          image: elktool-lifetimes:latest
+          imagePullPolicy: Never
