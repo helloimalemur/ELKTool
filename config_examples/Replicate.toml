@@ -1,0 +1,9 @@
+[[haproxy]]
+index_prefix = "haproxy-files-TODAY"
+check_field_value = "repl"
+has_field_value = "sanitized"
+total_to_process = 3000
+dest_url = "https://myelastic.com:9200/"
+dest_username = "elastic"
+dest_password = "password"
+multiplier = 3

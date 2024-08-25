@@ -1,0 +1,21 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elktool-core
+  labels:
+    app: elktool-core
+  namespace: elktool
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elktool-core
+  template:
+    metadata:
+      labels:
+        app: elktool-core
+    spec:
+      containers:
+        - name: elktool-core
+          image: elktool-core:latest
+          imagePullPolicy: Never

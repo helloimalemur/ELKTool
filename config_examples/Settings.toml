@@ -1,0 +1,31 @@
+delay="1800" # delay on loop
+parallelism = "half"
+# elastic url and credentials
+elastic_url="https://myelastic.com:9200"
+elastic_user="elastic"
+elastic_pass="password"
+run_lm_on_start="true"
+alerting_enabled="true"
+# discord server webook
+discord_webhook_url="https://discordapp.com/api/webhooks/"
+# snapshot settings
+snapshot_repo_name="backup_snapshot_repo" # name of elastic snapshot repo - DO NOT CHANGE
+snapshot_repo_path="/mnt/elastic/backup_snapshot_repo/" # elastic repo path - update elasticsearch.yml
+#snapshot_last_timestamp="/root/.config/elktool/" # timestamp of last snapshot
+snapshot_backup_enabled="true" # enable/disable backups entirely
+snapshot_repo_backup_drive="/dev/sda1" # Elastic drive (not the backup drive, but the drive live elastic data is stored on)
+snapshot_min_free_space="1300000" # minimum free space to initiate snapshot creation (1300000 = 1300GB)
+#####
+max_async_search_response_size="50MB"
+### SMTP settings ####
+smtp_enabled = "true"
+smtp_host = "email-smtp.us-west-1.amazonaws.com"
+smtp_port = "587"
+smtp_require_auth = "true"
+smtp_username = "smtpuser"
+smtp_password = "smtppass"
+smtp_from = "noreply <noreply@myelastic.com>"
+
+smtp_recipient_1 = "me@myemail.com"
+pgduty = "alert@some.pagerduty.com" # pager duty
+#pgduty = "7706868610@vtext.com" # pager duty testing

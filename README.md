@@ -104,6 +104,14 @@ destination_field = "loginId"
 transform_type = "url_param"
 needle = "loginId="
 total_to_process = 6000
+
+[[entry]]
+index_prefix = "haproxy-files-TODAY"
+source_field = "message"
+destination_field = "funnelReferenceId"
+transform_type = "url_param"
+needle = "funnelReferenceId="
+total_to_process = 5000
 ```
 
 

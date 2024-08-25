@@ -1,0 +1,13 @@
+[Unit]
+Description=Elktool sanitize
+
+[Service]
+LimitNOFILE=18192:19384
+Type=simple
+User=root
+Group=root
+Restart=always
+ExecStart=/var/lib/elktool/run-sanitize.sh
+
+[Install]
+WantedBy=multi-user.target
