@@ -1,6 +1,4 @@
 /target
 .idea/
 Cargo.lock
-config/Settings.toml
-config/Policy.toml
-config/Transforms.toml
+config/*.toml
