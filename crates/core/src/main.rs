@@ -92,18 +92,24 @@ async fn main() {
 
     println!("Parallelism: {} {}", parallelism, default_parallel);
 
+    let then = Local::now();
+
     // main outer loop
     loop {
-        // run alert sequence
-        if alerting_enabled.contains("true") {
-            let _ = alert_sequence(
-                elastic_url,
-                elastic_user,
-                elastic_pass,
-                settings_map.clone(),
-            )
-            .await;
+        let now = Local::now();
+        if now.signed_duration_since(then).num_seconds() > 60 {
+            // run alert sequence
+            if alerting_enabled.contains("true") {
+                let _ = alert_sequence(
+                    elastic_url,
+                    elastic_user,
+                    elastic_pass,
+                    settings_map.clone(),
+                )
+                .await;
+            }
         }
+
 
         // run index transforms
         thread_func!(
