@@ -1,3 +1,6 @@
+# snapshots
+delete_snapshot="90"
+
 # HAPROXY
 close_haproxy="30"
 delete_haproxy="90"
