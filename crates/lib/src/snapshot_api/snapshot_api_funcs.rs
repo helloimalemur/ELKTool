@@ -1,13 +1,14 @@
+use crate::lifetime_api::lifetime_api_funcs::get_open_index_data;
 use crate::notifications::discord::send_discord;
 use crate::snapshot_api::snapshot::{SnapshotCreationConfirmation, Snapshots};
 use crate::snapshot_repository::snapshot_repo::get_snapshot_repo;
-use chrono::{Datelike, Days, Local};
+use chrono::{Datelike, Days, Local, NaiveDate};
 use std::collections::HashMap;
 use std::fs;
 use std::fs::File;
 use std::time::Duration;
+use substring::Substring;
 use sysinfo::Disks;
-
 // pub async fn create_snapshot(
 //     elastic_url: &str,
 //     elastic_user: &str,
@@ -494,33 +495,33 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
 //     }
 // }
 
-// async fn delete_snapshot(
-//     elastic_url: &str,
-//     elastic_user: &str,
-//     elastic_pass: &str,
-//     snapshot: String,
-// ) {
-//     let full_url = format!(
-//         "{}{}{}",
-//         elastic_url, "/_snapshot/default_snapshot_repo/", snapshot
-//     );
-//
-//     let client = reqwest::Client::builder()
-//         .danger_accept_invalid_certs(true)
-//         .build()
-//         .unwrap()
-//         .delete(full_url)
-//         .basic_auth(elastic_user, Some(elastic_pass))
-//         .header("Cache-Control", "max-age=0")
-//         .header("Accept", "application/json")
-//         .header("Accept-Encoding", "gzip, deflate")
-//         .send()
-//         .await;
-//
-//     let res = client.unwrap().text().await.unwrap();
-//
-//     println!("{:?}", res);
-// }
+async fn delete_snapshot(
+    elastic_url: &str,
+    elastic_user: &str,
+    elastic_pass: &str,
+    snapshot: String,
+) {
+    let full_url = format!(
+        "{}{}{}",
+        elastic_url, "/_snapshot/default_snapshot_repo/", snapshot
+    );
+
+    let client = reqwest::Client::builder()
+        .danger_accept_invalid_certs(true)
+        .build()
+        .unwrap()
+        .delete(full_url)
+        .basic_auth(elastic_user, Some(elastic_pass))
+        .header("Cache-Control", "max-age=0")
+        .header("Accept", "application/json")
+        .header("Accept-Encoding", "gzip, deflate")
+        .send()
+        .await;
+
+    let res = client.unwrap().text().await.unwrap();
+
+    println!("{:?}", res);
+}
 
 // pub async fn delete_all_snapshots(elastic_url: &str, elastic_user: &str, elastic_pass: &str) {
 //     let full_url = format!("{}{}", elastic_url, "/_snapshot/default_snapshot_repo/*");
@@ -542,9 +543,93 @@ async fn prepare_snapshot(settings_map: HashMap<String, String>) {
 //     println!("{:?}", res);
 // }
 
+pub async fn delete_snapshots_over_age_threshold(
+    settings_map: HashMap<String, String>,
+    policies_map: HashMap<String, String>,
+) {
+    let elastic_url = settings_map
+        .get("elastic_url")
+        .expect("COULD NOT GET elastic_url")
+        .as_str();
+    let elastic_user = settings_map
+        .get("elastic_user")
+        .expect("COULD NOT GET elastic_user")
+        .as_str();
+    let elastic_pass = settings_map
+        .get("elastic_pass")
+        .expect("COULD NOT GET elastic_pass")
+        .as_str();
+
+    let snapshot_data = get_snapshots(elastic_url, elastic_user, elastic_pass)
+        .await
+        .clone();
+
+    for index in snapshot_data.snapshots.unwrap() {
+        let length = index.clone().snapshot.unwrap().len();
+        // substring to date on name
+        let d_string = index.clone().snapshot.unwrap();
+        // if first char is not a "."
+        if !d_string.substring(0, 1).contains('.') && d_string.len() > 9 {
+            // sub string and parse date
+            let date_string = d_string.substring(length - 10, length);
+            let naive_date = match NaiveDate::parse_from_str(date_string, "%Y.%m.%d") {
+                Ok(r) => r,
+                Err(_) => NaiveDate::parse_from_str(
+                    Local::now().format("%Y.%m.%d").to_string().as_str(),
+                    "%Y.%m.%d",
+                )
+                .unwrap(),
+            };
+            let days_since = NaiveDate::parse_from_str(
+                Local::now().format("%Y.%m.%d").to_string().as_str(),
+                "%Y.%m.%d",
+            )
+            .unwrap()
+            .signed_duration_since(naive_date)
+            .num_days();
+
+            // println!("{}", index.clone().snapshot.unwrap());
+            // println!("{}", days_since.to_string());
+
+            // // compare parsed date with current date to see if we're over lifetime policy threshold
+            for policy in policies_map.iter() {
+                // if index name contains policy
+                let policy_ident = policy.0.split('_').enumerate().last().unwrap().1;
+                // if contains policy name
+                if index.clone().snapshot.unwrap().contains(policy_ident) {
+                    // println!("Policy {:?}", policy_ident);
+                    // println!("Policy {:?}", policy);
+                    if days_since as i32 > policy.1.parse::<i32>().unwrap() {
+                        // println!("Delete {:?}", index.clone().snapshot.unwrap());
+                        // if threshold exceeded
+                        if policy.0.contains("delete_") {
+                            println!(
+                                "delete - {} -- age {} is over thresh {}",
+                                index.clone().snapshot.unwrap(),
+                                days_since,
+                                policy.1
+                            );
+                            delete_snapshot(
+                                elastic_url,
+                                elastic_user,
+                                elastic_pass,
+                                index.snapshot.clone().unwrap().to_string(),
+                            )
+                            .await;
+                            // thread::sleep(SysDuration::new(0, 600));
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::snapshot_api::snapshot_api_funcs::create_yesterday_snapshot;
+    use crate::snapshot_api::snapshot_api_funcs::{
+        create_yesterday_snapshot, delete_snapshots_over_age_threshold,
+    };
     use config::Config;
     use std::collections::HashMap;
 
@@ -579,6 +664,33 @@ mod tests {
             elastic_user,
             elastic_pass,
             settings_map.clone(),
+        ));
+    }
+
+    #[test]
+    // #[ignore]
+    fn test_remove_old_snapshots() {
+        let settings = Config::builder()
+            .add_source(config::File::with_name("config/Settings"))
+            .build()
+            .unwrap();
+        let settings_map = settings
+            .clone()
+            .try_deserialize::<HashMap<String, String>>()
+            .unwrap();
+        let policies = Config::builder()
+            .add_source(config::File::with_name("config/Policy.toml"))
+            .build()
+            .unwrap();
+        let policies_map = policies
+            .clone()
+            .try_deserialize::<HashMap<String, String>>()
+            .unwrap();
+
+        let rt = tokio::runtime::Runtime::new();
+        rt.unwrap().block_on(delete_snapshots_over_age_threshold(
+            settings_map.clone(),
+            policies_map.clone(),
         ));
     }
 }

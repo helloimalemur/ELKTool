@@ -12,10 +12,10 @@ pub async fn process_app_index() {
     let settings = Config::builder()
         .add_source(config::File::with_name("../../config/Settings"))
         .build()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
     let settings_map = settings
         .try_deserialize::<HashMap<String, String>>()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
     let elastic_url = settings_map
         .get("elastic_url")
         .expect("COULD NOT GET elastic_url")
@@ -241,10 +241,10 @@ mod tests {
         let settings = Config::builder()
             .add_source(config::File::with_name("../../config/Settings"))
             .build()
-            .unwrap();
+            .expect("COULD NOT LOAD SETTINGS");
         let settings_map = settings
             .try_deserialize::<HashMap<String, String>>()
-            .unwrap();
+            .expect("COULD NOT LOAD SETTINGS");
         let elastic_url = settings_map
             .get("elastic_url")
             .expect("COULD NOT GET elastic_url")

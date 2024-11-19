@@ -14,17 +14,19 @@ macro_rules! thread_func {
         for _i in 0..$def_par {
             let sm = $sm.clone();
             let tk = tokio::runtime::Runtime::new();
-            let handle = thread::spawn(move || tk.unwrap().block_on($a(sm)));
+            let handle = thread::spawn(move || {
+                if let Ok(rt) = tk {
+                    rt.block_on($a(sm))
+                }
+            });
             handles.push(handle);
-            // let _ = tokio::time::sleep(Duration::new(0, 200000000)).await;
-            // let _ = tokio::time::sleep(Duration::new(1, 0)).await;
+
             let _ = tokio::time::sleep(Duration::new(2, 0)).await;
         }
 
         let _ = tokio::time::sleep(Duration::new(2, 0)).await;
 
         for handle in handles {
-            // handle.join().unwrap()
             if let Err(_) = handle.join() {
                 println!("WARNING: could not join on handle")
             }
@@ -38,10 +40,10 @@ async fn main() {
     let settings = Config::builder()
         .add_source(config::File::with_name("config/Settings"))
         .build()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
     let settings_map = settings
         .try_deserialize::<HashMap<String, String>>()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
 
     // get elastic user settings
     let elastic_url = settings_map
@@ -92,24 +94,18 @@ async fn main() {
 
     println!("Parallelism: {} {}", parallelism, default_parallel);
 
-    let then = Local::now();
-
     // main outer loop
     loop {
-        let now = Local::now();
-        if now.signed_duration_since(then).num_seconds() > 60 {
-            // run alert sequence
-            if alerting_enabled.contains("true") {
-                let _ = alert_sequence(
-                    elastic_url,
-                    elastic_user,
-                    elastic_pass,
-                    settings_map.clone(),
-                )
-                .await;
-            }
+        // run alert sequence
+        if alerting_enabled.contains("true") {
+            let _ = alert_sequence(
+                elastic_url,
+                elastic_user,
+                elastic_pass,
+                settings_map.clone(),
+            )
+            .await;
         }
-
 
         // run index transforms
         thread_func!(

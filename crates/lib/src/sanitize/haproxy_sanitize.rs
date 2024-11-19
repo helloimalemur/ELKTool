@@ -427,6 +427,7 @@ pub async fn send_bulk_sanitize_haproxy(
     elastic_pass: String,
     check_field: String,
 ) {
+    // print total updates
     // println!("{}", updates.len());
 
     let full_url = format!("{}{}{}", elastic_url.to_string(), "/", "_bulk/",);

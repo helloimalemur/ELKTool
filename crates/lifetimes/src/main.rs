@@ -7,7 +7,7 @@ use elktool_lib::lifetime_api::lifetime_api_funcs::{
 };
 use elktool_lib::search_settings::search_settings::max_async_search_response_size;
 use elktool_lib::snapshot_api::snapshot_api_funcs::{
-    check_disk_space, check_threshold_and_create_snapshot,
+    check_disk_space, check_threshold_and_create_snapshot, delete_snapshots_over_age_threshold,
 };
 use std::collections::HashMap;
 use std::process::Command;
@@ -19,19 +19,19 @@ async fn main() {
     let settings = Config::builder()
         .add_source(config::File::with_name("config/Settings"))
         .build()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
     let settings_map = settings
         .try_deserialize::<HashMap<String, String>>()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
 
     // load lifetime policies
     let policies = Config::builder()
         .add_source(config::File::with_name("config/Policy"))
         .build()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
     let policies_map = policies
         .try_deserialize::<HashMap<String, String>>()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
 
     let _ = Command::new("ulimit").arg("-n").arg("999999").spawn();
 
@@ -58,6 +58,9 @@ async fn run_lm_and_backup_routine(
         stop_ilm_service(settings_map.clone(), policies_map.clone()).await; // stop built-in ILM services
 
         max_async_search_response_size(settings_map.clone(), policies_map.clone()).await; // resolve async search size kibana error
+
+        println!("Deleting snapshots over threshold");
+        delete_snapshots_over_age_threshold(settings_map.clone(), policies_map.clone()).await; // policies beginning with "delete_"
 
         println!("Deleting indexes over threshold");
         delete_indexes_over_age_threshold(settings_map.clone(), policies_map.clone()).await; // policies beginning with "delete_"

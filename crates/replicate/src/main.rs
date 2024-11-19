@@ -37,10 +37,10 @@ async fn main() {
     let settings = Config::builder()
         .add_source(config::File::with_name("config/Settings"))
         .build()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
     let settings_map = settings
         .try_deserialize::<HashMap<String, String>>()
-        .unwrap();
+        .expect("COULD NOT LOAD SETTINGS");
 
     let parallelism = settings_map
         .get("parallelism")

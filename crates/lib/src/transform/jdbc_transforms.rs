@@ -89,8 +89,7 @@ pub async fn parse_to_new_jdbc_field(
                     if let Some(response_body) = index.clone().source.unwrap().response_body {
                         if response_body.contains(&"HTTP/1.1") {
                             rcount += 1;
-                            let mut status_code =
-                                response_body.split(&"HTTP/1.1".to_string()).last();
+                            let status_code = response_body.split(&"HTTP/1.1".to_string()).last();
 
                             // println!("{:?}", index);
                             // let split_by_param: Vec<&str> = response_body.split('&').collect();

@@ -291,8 +291,11 @@ async fn delete_index(
         .send()
         .await;
 
-    let res = client.unwrap().text().await;
-    println!("Success: {:?}", res);
+    if let Ok(res) = client {
+        println!("Success: {:?}", res.text().await);
+    } else {
+        println!("WARNING: REQUEST FAILED :: {}", index_name);
+    }
 }
 
 pub async fn get_open_index_data(
@@ -532,7 +535,7 @@ pub async fn cluster_disk_alloc_check(settings_map: HashMap<String, String>) -> 
     println!("{}", message.clone());
     send_discord(&settings_map, "CapnHook", message.as_str()).await;
 
-    if percentage_used.parse::<i32>().unwrap_or(0) > 70 {
+    if percentage_used.parse::<i32>().unwrap() > 70 {
         let message = "Disk Percentage Used too high!!!";
         println!("{}", message);
         send_discord(&settings_map, "CapnHook", message).await;
