@@ -4,10 +4,3 @@ run = "ls -lah"
 run = "pwd"
 [2]
 run = "cargo build"
-[3]
-run = "ls -lah /home/foxx/.cache/git-scm/ELKTool/target/debug/elktool-*"
-#[4]
-#run = "cargo add tokio --manifest-path testproj/Cargo.toml"
-#[5]
-#run = "cargo run --manifest-path testproj/Cargo.toml"
-##
