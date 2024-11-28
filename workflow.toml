@@ -1,7 +1,7 @@
 [0]
 run = "ls -lah"
-[1]
-run = "pwd"
-[2]
-run = "cargo build"
-#
+#[1]
+#run = "pwd"
+#[2]
+#run = "cargo build"
+##
