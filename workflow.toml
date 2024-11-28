@@ -1,0 +1,13 @@
+[0]
+run = "ls -lah"
+[1]
+run = "pwd"
+[2]
+run = "cargo build"
+#[3]
+#run = "cargo new testproj"
+#[4]
+#run = "cargo add tokio --manifest-path testproj/Cargo.toml"
+#[5]
+#run = "cargo run --manifest-path testproj/Cargo.toml"
+##
