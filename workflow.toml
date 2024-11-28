@@ -3,5 +3,5 @@
 #[1]
 #run = "pwd"
 #[2]
-run = "cargo build"
+run = "cargo run"
 ##
